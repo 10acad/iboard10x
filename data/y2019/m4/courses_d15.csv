@@ -1,0 +1,12 @@
+,id,category,shortname,fullname,format,visible
+0,10,1,Design eCourse ,How to design and facilitate an online course,topics,1
+1,46,7,Welcome to UpSkill,Welcome to UpSkill - start here!,topics,1
+2,9,4,Basic Python,Python for Beginners 1 - Python Language Basics,topics,1
+3,45,3,Pattern Match (new),Pattern Match (new),singleactivity,1
+4,12,3,Pattern Match,Pattern Match,singleactivity,0
+5,11,3,10 Academy Fellowship application,10 Academy Fellowship Application,topics,1
+6,8,1,Game and Learning,Game-based Learning,topics,1
+7,47,4,DS101,Fundamentals of Data Science,topics,1
+8,6,6,Databases,Year 8 Databases,topics,1
+9,7,6,FDP WordPress,FDP Design -WordPress,topics,1
+10,1,0,10 Academy,10 Academy UpSkill Platform,site,1

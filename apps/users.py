@@ -14,7 +14,13 @@ import dash_html_components as html
 import plotly.plotly as py
 from plotly import graph_objs as gox
 
+import logging
+import logging.handlers
+
 from app import app
+from utils.logger import get_logger
+
+logger = get_logger('users')
 
 millnames = ["", " K", " M", " B", " T"] # used to convert numbers
 
@@ -131,8 +137,29 @@ def top_name_mapper(toptype):
            'timespent': 'TotalSecondsSpent',
            'activitycount': 'ActivitiesCount'}[toptype]
 
-def get_top_user_df(topid, toptype, df_log, df_user=None):
+def get_df_matching_index(df, index_list):
+    em = set(pd.Index(index_list).tolist())
+    eg = set(df.index.tolist())
+    e = list(em & eg)  #intersection
+    return df.loc[e]
 
+def get_top_user_index(topid, toptype, df_log):
+    
+    col = top_name_mapper(toptype)
+    if 'top' in topid.lower():
+        q = {'top%s'%x : float(x)/100.0 for x in range(101)}[topid]
+        qdf = df_log[col].sort_values(ascending=False).to_frame()
+        qdf = qdf.quantile(1.0-q)
+        qval = qdf.values[0] #df_log[col].values[int((1.0-q)*len(df_log))] #
+        mask = df_log[col] >= qval
+        df = df_log[mask]
+    else:
+        df = df_log
+        
+    return df.index.tolist()
+    
+def get_top_user_df(topid, toptype, df_log, df_user=None):
+    
     col = top_name_mapper(toptype)
 
     if 'top' in topid.lower():
@@ -145,10 +172,9 @@ def get_top_user_df(topid, toptype, df_log, df_user=None):
         if df_user is None:
             return df_log_top
         else:
-            em = set(df_log_top.index.to_list())
-            eg = set(df_user.index.to_list())
-            e = list(em & eg)  #intersection
-            df_user_top = df_user.loc[e]
+            #get_top_user_index(topid, toptype, df_log)                
+            em = df_log_top.index.tolist()
+            df_user_top = get_df_matching_index(df_user,em)
             return df_log_top, df_user_top
     else:
         #retur
@@ -243,9 +269,14 @@ def histgram_countries(cdf):
 
 def histogram_topx_users(df_log,col):
 
-    trace1 = gox.Scatter(
+    y = df_log[col]
+    if col=='TotalSecondsSpent':
+        y = y.map(lambda x:float(x)/3600.0)
+        col = 'Dedication Time (Hrs)'
+        
+    trace1 = gox.Bar(
         x = df_log.index,
-        y=df_log[col],
+        y=y,
         #histnorm='percent',
         #name='control',
         #xbins=dict(
@@ -278,7 +309,7 @@ def histogram_topx_users(df_log,col):
     layout = gox.Layout(
         #title='Users Profile',
         xaxis=dict(
-            title='User ID'
+            title='Users Index'
         ),
         yaxis=dict(
             title=col
@@ -296,286 +327,18 @@ def histogram_topx_users(df_log,col):
     return {"data": data, "layout": layout}
 
 
-
-
-# returns modal (hidden by default)
-def modal():
-    return html.Div(
-        html.Div(
-            [
-                html.Div(
-                    [
-
-                        # modal header
-                        html.Div(
-                            [
-                                html.Span(
-                                    "New Opportunity",
-                                    style={
-                                        "color": "#506784",
-                                        "fontWeight": "bold",
-                                        "fontSize": "20",
-                                    },
-                                ),
-                                html.Span(
-                                    "×",
-                                    id="opportunities_modal_close",
-                                    n_clicks=0,
-                                    style={
-                                        "float": "right",
-                                        "cursor": "pointer",
-                                        "marginTop": "0",
-                                        "marginBottom": "17",
-                                    },
-                                ),
-                            ],
-                            className="row",
-                            style={"borderBottom": "1px solid #C8D4E3"},
-                        ),
-
-
-                        # modal form 
-                        html.Div(
-                            [
-
-                                # left div
-                                html.Div(
-                                    [
-                                        html.P(
-                                            [
-                                                "Name"
-                                            ],
-                                            style={
-                                                "float": "left",
-                                                "marginTop": "4",
-                                                "marginBottom": "2",
-                                            },
-                                            className="row",
-                                        ),
-                                        dcc.Input(
-                                            id="new_opportunity_name",
-                                            placeholder="Name of the opportunity",
-                                            type="text",
-                                            value="",
-                                            style={"width": "100%"},
-                                        ),
-
-                                        html.P(
-                                            [
-                                                "StageName"
-                                            ],
-                                            style={
-                                                "textAlign": "left",
-                                                "marginBottom": "2",
-                                                "marginTop": "4",
-                                            },
-                                        ),
-                                        dcc.Dropdown(
-                                            id="new_opportunity_stage",
-                                            options=[
-                                                {
-                                                    "label": "Prospecting",
-                                                    "value": "Prospecting",
-                                                },
-                                                {
-                                                    "label": "Qualification",
-                                                    "value": "Qualification",
-                                                },
-                                                {
-                                                    "label": "Needs Analysis",
-                                                    "value": "Needs Analysis",
-                                                },
-                                                {
-                                                    "label": "Value Proposition",
-                                                    "value": "Value Proposition",
-                                                },
-                                                {
-                                                    "label": "Id. Decision Makers",
-                                                    "value": "Closed",
-                                                },
-                                                {
-                                                    "label": "Perception Analysis",
-                                                    "value": "Perception Analysis",
-                                                },
-                                                {
-                                                    "label": "Proposal/Price Quote",
-                                                    "value": "Proposal/Price Quote",
-                                                },
-                                                {
-                                                    "label": "Negotiation/Review",
-                                                    "value": "Negotiation/Review",
-                                                },
-                                                {
-                                                    "label": "Closed/Won",
-                                                    "value": "Closed Won",
-                                                },
-                                                {
-                                                    "label": "Closed/Lost",
-                                                    "value": "Closed Lost",
-                                                },
-                                            ],
-                                            clearable=False,
-                                            value="Prospecting",
-                                        ),
-
-                                        html.P(
-                                            "Source",
-                                            style={
-                                                "textAlign": "left",
-                                                "marginBottom": "2",
-                                                "marginTop": "4",
-                                            },
-                                        ),
-                                        dcc.Dropdown(
-                                            id="new_opportunity_source",
-                                            options=[
-                                                {"label": "Web", "value": "Web"},
-                                                {
-                                                    "label": "Phone Inquiry",
-                                                    "value": "Phone Inquiry",
-                                                },
-                                                {
-                                                    "label": "Partner Referral",
-                                                    "value": "Partner Referral",
-                                                },
-                                                {
-                                                    "label": "Purchased List",
-                                                    "value": "Purchased List",
-                                                },
-                                                {"label": "Other", "value": "Other"},
-                                            ],
-                                            value="Web",
-                                        ),
-
-                                        html.P(
-                                            [
-                                                "Close Date"
-                                            ],
-                                            style={
-                                                "textAlign": "left",
-                                                "marginBottom": "2",
-                                                "marginTop": "4",
-                                            },
-                                        ),
-                                        html.Div(
-                                            dcc.DatePickerSingle(
-                                                id="new_opportunity_date",
-                                                min_date_allowed=date.today(),
-                                                # max_date_allowed=dt(2017, 9, 19),
-                                                initial_visible_month=date.today(),
-                                                date=date.today(),
-                                            ),
-                                            style={"textAlign": "left"},
-                                        ),
-
-                                    ],
-                                    className="six columns",
-                                    style={"paddingRight": "15"},
-                                ),
-
-                                
-                                # right div
-                                html.Div(
-                                    [
-                                        html.P(
-                                            "Type",
-                                            style={
-                                                "textAlign": "left",
-                                                "marginBottom": "2",
-                                                "marginTop": "4",
-                                            },
-                                        ),
-                                        dcc.Dropdown(
-                                            id="new_opportunity_type",
-                                            options=[
-                                                {
-                                                    "label": "Existing Customer - Replacement",
-                                                    "value": "Existing Customer - Replacement",
-                                                },
-                                                {
-                                                    "label": "New Customer",
-                                                    "value": "New Customer",
-                                                },
-                                                {
-                                                    "label": "Existing Customer - Upgrade",
-                                                    "value": "Existing Customer - Upgrade",
-                                                },
-                                                {
-                                                    "label": "Existing Customer - Downgrade",
-                                                    "value": "Existing Customer - Downgrade",
-                                                },
-                                            ],
-                                            value="New Customer",
-                                        ),
-
-                                        html.P(
-                                            "Amount",
-                                            style={
-                                                "textAlign": "left",
-                                                "marginBottom": "2",
-                                                "marginTop": "4",
-                                            },
-                                        ),
-                                        dcc.Input(
-                                            id="new_opportunity_amount",
-                                            placeholder="0",
-                                            type="number",
-                                            value="",
-                                            style={"width": "100%"},
-                                        ),
-
-                                        html.P(
-                                            "Probability",
-                                            style={
-                                                "textAlign": "left",
-                                                "marginBottom": "2",
-                                                "marginTop": "4",
-                                            },
-                                        ),
-                                        dcc.Input(
-                                            id="new_opportunity_probability",
-                                            placeholder="0",
-                                            type="number",
-                                            max=100,
-                                            step=1,
-                                            value="",
-                                            style={"width": "100%"},
-                                        ),
-
-                                    ],
-                                    className="six columns",
-                                    style={"paddingLeft": "15"},
-                                ),
-                            ],
-                            className="row",
-                            style={"paddingTop": "2%"},
-                        ),
-
-
-                        # submit button
-                        html.Span(
-                            "Submit",
-                            id="submit_new_opportunity",
-                            n_clicks=0,
-                            className="button button--primary add"
-                        ),
-                    ],
-                    className="modal-content",
-                    style={"textAlign": "center"},
-                )
-            ],
-            className="modal",
-        ),
-        id="opportunities_modal",
-        style={"display": "none"},
-    )
-
+#-----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
 
 layout = [
 
     # top controls
     html.Div(
         [
+            # Hidden div inside the app that stores the intermediate value
+            html.Div(id='intermediate-value', style={'display': 'none'}),
+            
             html.Div(
                 dcc.Dropdown(
                     id="source_dropdown",
@@ -595,11 +358,12 @@ layout = [
                     options=[
                         {"label": "Top 1%", "value": "top1"},
                         {"label": "Top 5%", "value": "top5"},
+                        {"label": "Top 10%", "value": "top10"},                        
                         {"label": "Top 25%", "value": "top25"},
                         {"label": "Top 50%", "value": "top50"},
                         {"label": "All Users", "value": "all"},                        
                     ],
-                    value="all_s",
+                    value="all",
                     clearable=False,
                 ),
                 className="two columns",
@@ -712,118 +476,106 @@ layout = [
         className="row",
         style={"marginTop": "20px"}
     ),
-
-
-#     # tables row div
-#     html.Div(
-#         [
-#             html.Div(
-#                 [
-#                     html.P(
-#                         "Activities Count",
-#                         style={
-#                             "color": "#2a3f5f",
-#                             "fontSize": "13px",
-#                             "textAlign": "center",
-#                             "marginBottom": "0",
-#                         },
-#                     ),
-#                     html.Div(
-#                         id="top_active_users",
-#                         style={"padding": "0px 13px 5px 13px", "marginBottom": "5"},
-#                     ),
-#
-#                 ],
-#                 className="six columns",
-#                 style={
-#                     "backgroundColor": "white",
-#                     "border": "1px solid #C8D4E3",
-#                     "borderRadius": "3px",
-#                     "height": "100%",
-#                     "overflowY": "scroll",
-#                 },
-#             ),
-#             html.Div(
-#                 [
-#                     html.P(
-#                         "Dedication Time",
-#                         style={
-#                             "color": "#2a3f5f",
-#                             "fontSize": "13px",
-#                             "textAlign": "center",
-#                             "marginBottom": "0",
-#                         },
-#                     ),
-#                     html.Div(
-#                         id="top_dedicated_users",
-#                         style={"padding": "0px 13px 5px 13px", "marginBottom": "5"},
-#                     )
-#                 ],
-#                 className="six columns",
-#                 style={
-#                     "backgroundColor": "white",
-#                     "border": "1px solid #C8D4E3",
-#                     "borderRadius": "3px",
-#                     "height": "100%",
-#                     "overflowY": "scroll",
-#                 },
-#             ),
-#
-#
-#             modal(),
-#         ],
-#          className="row",
-#          style={"marginTop": "5px", "max height": "200px"},
-#      ),
-
-
  ]
 
 
-# updates heatmap figure based on dropdowns values or df updates
+@app.callback(
+    Output('intermediate-value', 'children'),
+    [
+        Input("topusers_dropdown", "value"),
+        Input("topestimator_dropdown", "value"),
+        Input("engagement_df", "children")
+    ],  
+)
+# some expensive clean data step
+def clean_data(topid, toptype, df_log):
+    
+    #read input
+    df_log = pd.read_json(df_log, orient="split")
+    
+    #process
+    index_toplist = [int(x) for x in get_top_user_index(topid, toptype, df_log)]
+
+    
+    # more generally, this line would be
+    #return top.to_json(date_format='iso', orient='split')    
+    return json.dumps(index_toplist)
+
+
+ 
+# updates user figure based on dropdowns values or df updates
 @app.callback(
     Output("activities_count", "figure"),
-    [Input("topusers_dropdown", "value"), Input("topestimator_dropdown", "value"),
-     Input("users_df", "children"), Input("engagement_df", "children")],
+    [
+        Input("topusers_dropdown", "value"),
+        Input("topestimator_dropdown", "value"),        
+        Input('intermediate-value', 'children'),
+        Input("engagement_df", "children")
+    ],
 )
-def topusers_callback(topid, toptype, df_user,df_log):
+def topusers_callback(topid, toptype, topindex, df_log):
 
-    dfu = pd.read_json(df_user, orient="split")
-    dfl = pd.read_json(df_log, orient="split")
 
+    #read input
+    index_list = json.loads(topindex) #pd.read_json(topindex).to_list()     
+    df_log = pd.read_json(df_log, orient="split")
+
+    #process
+    df_top = get_df_matching_index(df_log,index_list)        
     col = top_name_mapper(toptype)
-    dfl_top, dfu_top = get_top_user_df(topid, toptype, dfl, df_user=dfu)
 
-    #print('topid=%s, toptype=%s, lendf=%s'%(topid,toptype, len(dfl_top) ))
-    #print('dfl_top, head:',dfl_top.head())
-
-    return histogram_topx_users(dfl_top, col)
+    #logger.debug('figure topusers: col=%s, len(df_log), len(df_log_top)=%s'%(col, len(df_log), len(df_top)))  
+    
+    return histogram_topx_users(df_top, col)
 
 
 # updates converted opportunity count graph based on dropdowns values or df updates
 @app.callback(
     Output("gender_distribution", "figure"),
     [
-        Input("topusers_dropdown", "value"), Input("users_df", "children"),
+        Input("topusers_dropdown", "value"),
+        Input("topestimator_dropdown", "value"),         
+        Input('intermediate-value', 'children'),
+        Input("users_df", "children"),
     ],
 )
-def gender_distribution_callback(topid, df_user):
-    df = pd.read_json(df_user, orient="split")
-    cdf = user_group_by_gender(df)
-    #print('gender cdf',cdf.head())
+def gender_distribution_callback(topid, toptype, topindex, df_user):
 
+    #read input
+    index_list = json.loads(topindex) #pd.read_json(topindex).to_list() 
+    df_user = pd.read_json(df_user, orient="split")
+
+    #process
+    df_top = get_df_matching_index(df_user,index_list)      
+    cdf = user_group_by_gender(df_top)
+
+    col = top_name_mapper(toptype)    
+    #logger.debug('figure genderdist: col=%s, len(df_log), len(df_log_top)=%s'%(col, len(df_user), len(df_top)))
+    
     return histgram_countries(cdf)
 
 
 
 @app.callback(
     Output("left_users_indicator", "children"),
-    [Input("topusers_dropdown", "value"), Input("topestimator_dropdown", "value"),
-     Input("engagement_df", "children")],
+    [
+        Input("topusers_dropdown", "value"),
+        Input("topestimator_dropdown", "value"),                
+        Input('intermediate-value', 'children'),
+        Input("engagement_df", "children")
+    ],
 )
-def left_users_indicator_callback(topid, toptype, df):
-    df = pd.read_json(df, orient="split")
-    df_top= get_top_user_df(topid, toptype, df)
+def left_users_indicator_callback(topid, toptype, topindex, df_log):
+
+    #read input
+    index_list = json.loads(topindex) #pd.read_json(topindex).to_list() 
+    df = pd.read_json(df_log, orient="split")
+
+    #process
+    df_top = get_df_matching_index(df,index_list)
+    
+    #df = pd.read_json(df, orient="split")
+    #df_top= get_top_user_df(topid, toptype, df)
 
     #
     nuser = millify(str( len(df_top) ))
@@ -833,13 +585,22 @@ def left_users_indicator_callback(topid, toptype, df):
 # updates middle indicator value based on df updates
 @app.callback(
     Output("middle_users_indicator", "children"),
-    [Input("topusers_dropdown", "value"), Input("topestimator_dropdown", "value"),
-     Input("engagement_df", "children")],
+    [
+        Input("topusers_dropdown", "value"),
+        Input("topestimator_dropdown", "value"),        
+        Input('intermediate-value', 'children'),
+        Input("engagement_df", "children")
+    ],
 )
-def middle_users_indicator_callback(topid, toptype, df):
-    df = pd.read_json(df, orient="split")
-    df_top= get_top_user_df(topid, toptype, df)
+def middle_users_indicator_callback(topid, toptype, topindex, df_log):
 
+    #read input
+    index_list = json.loads(topindex) #pd.read_json(topindex).to_list() 
+    df = pd.read_json(df_log, orient="split")
+
+    #process
+    df_top = get_df_matching_index(df,index_list)
+    
     #
     col = top_name_mapper('activitycount')
     #print('middle col', col, df_top[col].sum())
@@ -853,102 +614,26 @@ def middle_users_indicator_callback(topid, toptype, df):
 # updates right indicator value based on df updates
 @app.callback(
     Output("right_users_indicator", "children"),
-    [Input("topusers_dropdown", "value"), Input("topestimator_dropdown", "value"),
-     Input("engagement_df", "children")],
+    [
+        Input("topusers_dropdown", "value"),
+        Input("topestimator_dropdown", "value"),         
+        Input('intermediate-value', 'children'),
+        Input("engagement_df", "children")
+    ],
 )
-def right_users_indicator_callback(topid, toptype, df):
-    df = pd.read_json(df, orient="split")
-    df_top= get_top_user_df(topid, toptype, df)
+def right_users_indicator_callback(topid, toptype, topindex, df_log):
+    #read input
+    index_list = json.loads(topindex) #pd.read_json(topindex).to_list() 
+    df = pd.read_json(df_log, orient="split")
 
+    #process
+    df_top = get_df_matching_index(df,index_list)
+    
     #
     col = top_name_mapper('timespent')
-    #print('right col', col, df_top[col].sum())
     timespent = millify(
         str( df_top[col].map(lambda x:float(x)/3600.0).sum() )
     )
 
-
     return '%s hrs'%timespent
 
-
-# # hide/show modal
-# @app.callback(
-#     Output("opportunities_modal", "style"), [Input("new_opportunity", "n_clicks")]
-# )
-# def display_opportunities_modal_callback(n):
-#     if n > 0:
-#         return {"display": "block"}
-#     return {"display": "none"}
-#
-#
-# # reset to 0 add button n_clicks property
-# @app.callback(
-#     Output("new_opportunity", "n_clicks"),
-#     [
-#         Input("opportunities_modal_close", "n_clicks"),
-#         Input("submit_new_opportunity", "n_clicks"),
-#     ],
-# )
-# def close_modal_callback(n, n2):
-#     return 0
-#
-#
-# # add new opportunity to salesforce and stores new df in hidden div
-# @app.callback(
-#     Output("opportunities_df", "children"),
-#     [Input("submit_new_opportunity", "n_clicks")],
-#     [
-#         State("new_opportunity_name", "value"),
-#         State("new_opportunity_stage", "value"),
-#         State("new_opportunity_amount", "value"),
-#         State("new_opportunity_probability", "value"),
-#         State("new_opportunity_date", "date"),
-#         State("new_opportunity_type", "value"),
-#         State("new_opportunity_source", "value"),
-#         State("opportunities_df", "children"),
-#     ],
-# )
-# def add_opportunity_callback(
-#     n_clicks, name, stage, amount, probability, date, o_type, source, current_df
-# ):
-#     if n_clicks > 0:
-#         if name == "":
-#             name = "Not named yet"
-#         query = {
-#             "Name": name,
-#             "StageName": stage,
-#             "Amount": amount,
-#             "Probability": probability,
-#             "CloseDate": date,
-#             "Type": o_type,
-#             "LeadSource": source,
-#         }
-#
-#         sf_manager.add_opportunity(query)
-#
-#         df = sf_manager.get_opportunities()
-#
-#         return df.to_json(orient="split")
-#
-#     return current_df
-#
-#
-# # updates top open opportunities based on df updates
-# @app.callback(
-#     Output("top_open_opportunities", "children"),
-#     [Input("opportunities_df", "children")],
-# )
-# def top_open_opportunities_callback(df):
-#     df = pd.read_json(df, orient="split")
-#     return top_open_opportunities(df)
-#
-#
-#
-# # updates top lost opportunities based on df updates
-# @app.callback(
-#     Output("top_lost_opportunities", "children"),
-#     [Input("opportunities_df", "children")],
-# )
-# def top_lost_opportunities_callback(df):
-#     df = pd.read_json(df, orient="split")
-#     return top_lost_opportunities(df)

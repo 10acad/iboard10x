@@ -20,10 +20,16 @@ from utils import  dbutil
 import fileManager as fman
 #from configparser import ConfigParser
 import utils.log_analysis as logstat
+from utils.logger import get_logger
 
+cdir = os.path.dirname(__file__)
+logger = get_logger('dbManager')
+
+#today = datetime.today()
+#datem = datetime(today.year, today.month, today.day)
 
 class rds_manager():
-    def __init__(self,verbose=1,datarootdir='data',connect=True):
+    def __init__(self,verbose=1,datarootdir=os.path.join(cdir,'data'),connect=True):
         #
         self.verbose=verbose
         self.datarootdir = datarootdir
@@ -52,12 +58,12 @@ class rds_manager():
         try:
             proot = 'postgresql://{user}:{password}@{host}:5432/{database}'.format(**self.db_params)
             #print(proot)
-            print('Connecting to the PostgreSQL database...using sqlalchemy engine')
+            logger.info('Connecting to the PostgreSQL database...using sqlalchemy engine')
             engine = create_engine(proot)
             # connect to the PostgreSQL server
             #engine = psycopg2.connect(**self.db_params)    
         except (Exception, psycopg2.DatabaseError) as error:
-            print(error)
+            logger.error(error)
 
         self.dbisopen = True
         return engine
@@ -182,10 +188,11 @@ class rds_manager():
     #------------ READ DATA FROM FILE ------------
     def read_latest_users(self,verbose=0):
         ff, date = fman.get_latest_filename(self.datarootdir,'users',ext='csv',verbose=verbose-1)
+        logger.debug('user_csv_filename: %s and date=%s'%(ff,date))
         date_columns = ['timecreated','firstaccess','lastaccess',
                         'lastlogin','currentlogin','ApplicationDate']
         if verbose>1:
-            print('reading the latest users file from: %s'%ff)
+            logger.debug('reading the latest users file from: %s'%ff)
 
         df = pd.read_csv(ff,index_col='id',parse_dates=date_columns)
 
@@ -200,7 +207,7 @@ class rds_manager():
         ff, date = fman.get_latest_filename(self.datarootdir,'logsummary',ext='csv',verbose=0)
 
         if verbose>1:
-            print('reading the latest logsummary file from: %s'%ff)
+            logger.debug('reading the latest logsummary file from: %s'%ff)
 
         df = pd.read_csv(ff, index_col = 'UserId',dtype=dmapper)
 

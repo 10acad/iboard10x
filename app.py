@@ -24,7 +24,10 @@ server = flask.Flask(__name__)
 # })
 
 
-app = dash.Dash(__name__, server=server, url_base_pathname='/')
+app = dash.Dash(__name__, server=server,
+                url_base_pathname='/',
+                static_folder='data')
+#                
 
 app.css.append_css({
     "external_url": "https://codepen.io/chriddyp/pen/bWLwgP.css"

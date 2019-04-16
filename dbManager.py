@@ -29,7 +29,7 @@ logger = get_logger('dbManager')
 #datem = datetime(today.year, today.month, today.day)
 
 class rds_manager():
-    def __init__(self,verbose=1,datarootdir=os.path.join(cdir,'data'),connect=True):
+    def __init__(self,verbose=1,datarootdir=os.path.join(cdir,'csvs'),connect=True):
         #
         self.verbose=verbose
         self.datarootdir = datarootdir

@@ -29,12 +29,15 @@ app = dash.Dash(__name__, server=server,
                 static_folder='data')
 #                
 
-url='https://cdn.rawgit.com/plotly/dash-app-stylesheets/2d266c578d2a6e8850ebce48fdb52759b2aef506/stylesheet-oil-and-gas.css'
+url=[
+    'https://cdn.rawgit.com/plotly/dash-app-stylesheets/2d266c578d2a6e8850ebce48fdb52759b2aef506/stylesheet-oil-and-gas.css',
+    'https://codepen.io/chriddyp/pen/bWLwgP.css',
+]
 app.css.append_css({'external_url': url})
 
-app.css.append_css({
-    "external_url": "https://codepen.io/chriddyp/pen/bWLwgP.css"
-})
+#app.css.append_css({
+#    "external_url": "https://codepen.io/chriddyp/pen/bWLwgP.css"
+#})
 
 
 #app.scripts.config.serve_locally=True

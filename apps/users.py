@@ -36,6 +36,16 @@ dropdown_styles = {
     'fontWeight': 'bold'
 }
 
+indicators_style = {
+    'borderTop': '1px solid #d6d6d6',
+    'borderBottom': '1px solid #d6d6d6',
+    'backgroundColor': 'white',
+    'color': '#ED1F33',
+    'padding': '6px',
+    'fontWeight': 'bold',
+    "fontSise":12,
+}
+
 fig_title_style = {
     "height": "1%",
     "width": "98%",
@@ -57,30 +67,21 @@ fig_text_style = {
     #'padding': '6px'
 }
 
+fig_subdiv_style = {
+    "height": "100%",
+    "width": "100%",
+    "margin": "auto",
+    #'padding': '15px'    
+    }
+
 fig_style = {
     "height": "100%",
-    "width": "48%",
+    "width": "49.5%",
     #"color": 'black',
     #"background-color": "#ED1F33",
     #'textAlign': 'center',
     #"fontSise":12,    
-   'padding': '15px'
-}
-fig_subdiv_style = {
-    "height": "100%",
-    "width": "100%",
-    #"margin": "auto",
-    'padding': '15px'    
-    }
-    
-indicators_style = {
-    'borderTop': '1px solid #d6d6d6',
-    'borderBottom': '1px solid #d6d6d6',
-    'backgroundColor': 'white',
-    'color': '#ED1F33',
-    'padding': '6px',
-    'fontWeight': 'bold',
-    "fontSise":12,
+   'padding': '20px'
 }
 
 #

@@ -41,7 +41,7 @@ fig_title_style = {
     "width": "98%",
     "color": 'white',
     "background-color": "#ED1F33",
-    'textAlign': 'left',
+    'textAlign': 'center',
     "fontSise":15,
     'padding': '6px'
 }
@@ -53,19 +53,26 @@ fig_text_style = {
     #"background-color": "#ED1F33",
     'textAlign': 'left',
     "fontSise":12,
+    "margin": "auto",    
     #'padding': '6px'
 }
 
 fig_style = {
-    "height": "2%",
-    "width": "49%",
-    "color": 'black',
+    "height": "100%",
+    "width": "48%",
+    #"color": 'black',
     #"background-color": "#ED1F33",
-    'textAlign': 'left',
-    "fontSise":12,
-    'padding': '15px'
+    #'textAlign': 'center',
+    #"fontSise":12,    
+   'padding': '15px'
 }
-
+fig_subdiv_style = {
+    "height": "100%",
+    "width": "100%",
+    #"margin": "auto",
+    'padding': '15px'    
+    }
+    
 indicators_style = {
     'borderTop': '1px solid #d6d6d6',
     'borderBottom': '1px solid #d6d6d6',
@@ -435,7 +442,7 @@ layout = [
 
                     dcc.Graph(
                         id="activities_count",
-                        style={"height": "90%", "width": "98%"},
+                        style=fig_subdiv_style,
                         config=dict(displayModeBar=False),
                     ),
                 ],
@@ -458,7 +465,7 @@ layout = [
 
                     dcc.Graph(
                         id="gender_distribution",
-                        style={"height": "90%", "width": "98%"},
+                        style=fig_subdiv_style,
                         config=dict(displayModeBar=False),
                     ),
 
